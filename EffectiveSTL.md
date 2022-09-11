@@ -87,3 +87,199 @@ for(int i=0;i<numValues;i++){
 对于vector 和string这三条都满足，对于deque第三条不满足。
 
 对于list只有第一条满足，但是单个插入list会导致list需要不断变化pre 和next的指向，没有必要。
+
+## 6.如果容器中包含了通过new操作创建的指针，切记在容器对象析构前，要将指针delete。
+
+```c++
+void dosomething(){
+vector<widget *>vmp;
+for(int i=0;i<N;++i)
+	vwp.push_back(new wideget);
+}
+//当vmp作用域结束后，它的全部元素会被析构，但是new出来的内存没有删除，导致内存泄漏
+
+//第一版本
+void dosomething(){
+vector<widget *>vmp;
+for(int i=0;i<N;++i)
+	vwp.push_back(new wideget);
+}
+...
+for(vector<widget*>::iterator i=vmp.begin();i!=vmp.end();++i)
+    delete i;
+//当时当new 过程中出现异常，还是会导致内存泄露
+
+//第二版本
+struct DeleteObject{
+    template<typename T>
+    void operator()(const T *ptr){
+        delete ptr;
+    }
+};
+void dosomething(){
+ typedef boost::shared_ptr<widget>spw;
+    
+vector<spw>vmp;
+for(int i=0;i<N;++i)
+	vwp.push_back(spw(new wideget);
+}
+...
+for_each(vmp.begin(),vmp.end(),DeleteObject());
+ //将指针给智能指针，不怕发生异常内存泄漏，然后采用for_each，区间比单元素需要要高
+```
+
+## 7.切勿创建包含auto_ptr的容器对象
+
+首先auto_ptr的对象是被c++标准所禁止的，说明可以移植性不强。
+
+上面提到，STL中采用的是拷贝的方法，auto_ptr对象进行拷贝时会将原来的对象所有权设置交给新对象，然后将原来对象所有权设为为NULL
+
+例如在排序时，会将基准元素拷贝给一个临时对象，使容器中一个元素为null,临时对象会在作用域结束后被销毁。导致容器可能会失去一个或者多个对象。
+
+## 8.慎重选择删除元素的方法
+
+```c++
+container<int>c;
+```
+
+- 对于容器c,如果想删除值为1963的元素。对于不同容器应该采用不同的方法。
+
+对于连续容器例如 vector,deque,string
+
+```c++
+c.earse(remove(c.begin(),c.end(),1963),c.end());
+```
+
+对于list
+
+```c++
+c.remove(1963);
+```
+
+对于关联容器采用
+
+```c++
+c.erase(1963);
+```
+
+- 当要删除判别式为 true的值
+
+```
+bool badValue(int);
+```
+
+对于连续容器例如 vector,deque,string
+
+```
+c.earse(remove(c.begin(),c.end(),badValue),c.end());
+```
+
+对于list
+
+```
+c.remove_if(badValue);
+```
+
+对于关联容器，两种方法
+
+```c++
+//方法一
+AddocContainer<int>c;
+...
+AddocContainer<int>goodValues;
+remove_copy_if(c.begin(),c.end(),inserter(goodValues,goodValues.end(),badValue);
+//将不用删除的元素放入goodValues容器中
+//将两容器元素交换
+c.swap(goodVlues;)
+//方法二
+for(AddocContainer<int>::iterator i=c.begin();i!=c.end();){
+	if(badValues(*i))
+        c.earse(i++);  //确保i被删除后，有一个迭代器指向下一个元素。关联容器不反悔元素
+    else
+        ++i;
+}
+//对于 vector,deque,string，list,想要在为true时，写日志
+  for(AddocContainer<int>::iterator i=c.begin();i!=c.end();){
+	if(badValues(*i)){
+        logFile<<"earse "<<*i<<"/n";
+       i =c.earse(i);  
+    }//确保i被删除后，有一个迭代器指向下一个元素。序列元素返回之下下一个元素的迭代器
+    else
+        ++i;
+}             
+               
+       
+               
+```
+
+## 9.了解分配子allocator的约定和限制
+
+- 你的分配子是一个模板，模板参数T代表你为它分配内存对象的类型
+- 提供类型定义pointer和reference,但始终让pointer为T* ,让reference 为T&
+- 千万不要让你的分配子拥有随对象而不同的状态。通常分配子不应该有非静态的数据结构
+- **传给分配子的allocate成员函数的是那些要求内存的对象的个数，new传递的是void* 需要的字节个数。同时记住，allocate返回的T*指针，既然没有T对象被构造。**
+- 一定也要提供嵌套的rebind模板，因为标准容器依赖该模板。
+
+## 10.切勿对STL容器的线程不安全性有不切实际的依赖
+
+STL不提供线程安全，需要自己写互斥锁
+
+```c++
+//定义lock类
+template<tyname Container>
+class Lock{
+public:
+Lock(const Container& container):c(container){
+	getMutexFor(c);//创造互斥体
+}
+~Lock(){
+	releaseMutexFor(c);//析构互斥体
+}
+private:
+const Container& c;
+}
+
+//
+vector<int>v;
+...
+{
+	Lock<vector<int>>lock(v);
+	vector<int>::iteator first5(find(v.begin(),v.end(),5));
+	if(first5 !=v.begin())
+		*first5=0;
+}//代码块结束，互斥体被释放
+
+```
+
+## 11.vector和string优于动态分配的数组
+
+vector和string可以实现自己释放内存，并且可以使用STL算法
+
+但是在多线程情况下使用string，可能会造成性能下跌，不如使用vector<char>，因为string采用的是引用计数。
+
+12.使用reserve避免不必要的重新分配
+
+![image-20220911205652519](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220911205652519.png)
+
+因为当容器容量不满足需求时，会进行容量扩充，重新申请一个是当前容量数倍的内存，把当前内存中元素移入然后将原来的内存进行析构。这个过程很浪费时间，因此两种方法去避免。
+
+- 当知道需要预留的空间大小使，用reserve函数提前去开辟。
+- 当不知道时，开辟足够大的，到最后在去除多余容量。
+
+## 12.注意string实现的多样性
+
+STL对string的实现有不同的方式，每个方式都有不同的特点，详情看第十五条
+
+它们的区别主要是：
+
+string的值可能会被引用，也可能不会被引用
+
+string对象的大小范围是char*的1倍到7倍
+
+创建一个新字符串可能需要0次，1，2次动态分配内存
+
+string对象可能被共享，也可能不共享其大小和内存信息
+
+string可能支持，也可能不支持对单个对象的分配子
+
+不同实现对内存的最小分配有不同策略。
