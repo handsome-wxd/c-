@@ -283,3 +283,91 @@ string对象可能被共享，也可能不共享其大小和内存信息
 string可能支持，也可能不支持对单个对象的分配子
 
 不同实现对内存的最小分配有不同策略。
+
+## 13.了解如何将string和vector 传给旧的API
+
+对于vector
+
+```c++
+//对于这个旧的API
+void dosomething(const int* pInts,size_t numInts);
+//vector 应该传递 
+vector<int>v;
+dosomething(&v[0], numInts);
+//也有人说传递 dosomething(v.begin(), numInts);
+//begin()返回是一个迭代器，事实上对于vector迭代器就是指针，但是事实上迭代器不是一个指针
+```
+
+对于string
+
+```
+//对于旧的API
+void dosomething(const char *pstring)
+//strng 应该传递
+string str;
+dosomething(str.c_str())
+//因为string不是连续存储的，而且string不一定是以空字符结尾的。所以string内部有个c_str，指向字符串值的指针
+```
+
+## 14.使用‘swap技巧’去除多余的内存
+
+```c++
+vector<int>n(100,0);
+//删除一部分元素，只留下十个元素，但是容器的容量还是100
+n.erase(b.begin()+10,n.end());
+//为了去除多余的容量，使用swap
+vector<int>(n).swap(n);
+//通过vector<int>(n)创建一个隐式对象，这个对象的容量大小就是n实际包含元素的大小，然后与n进行交换，再将隐式对象析构掉。消除对于容量。
+//swap调用拷贝构造函数一次，赋值函数两次，将两个对象指针进行调换。不仅容器的内容就交换了，指针，引用都被交换了（string除外），但是相对来说还是在原来的容器中。
+
+//使用swap使内存最小
+vector<int>().swap(n);
+string str="dada";
+string ().swap(str);
+```
+
+## 15.避免是用vector<bool>
+
+因为vector<bool>不满足c++标准：c如果是包含对象T的容器，则 T* p=&c[0]是可以通过编译的。但是对于vector<bool>是不行的。因为，vector<bool>在内部是一位一位存的，而不是按自己存储，因为没办法创建指向单个位的指针
+
+可以用deque<bool>替代和bitset替代（大小固定，不能插入元素）。
+
+## 16，理解相等和等价的区别
+
+等价不一定是相等的，相等肯定是等价的。
+
+对于类的等价，取决于operator = 函数中的函数体。在关联容器中，例如map,set这种顺序存储的容器，需要定义一个比较类去确定它们的顺序。
+
+```c++
+struct CIstringCompare{
+public:
+binary_function<string,string,bool>
+bool operator()(const string&lhs,const string&rhs )const{
+return ciStringCompare(lhs,rhs);//忽略string 大小写的比较
+}
+};
+set<string,CIstringCompare)ciss;
+```
+
+## 17.为包含指针的关联函数指定比较类型
+
+```c++
+set<string *>ssp;
+ssp.insert(new string("Anteater"));
+ssp.insert(new string("Wombat"));
+ssp.insert(new string("Lemur"));
+ssp.insert(new string("Penguin"));
+for(set<string *>::iterator it;it!=ssp.end();it++){
+cout<<*it<<endl; //打印的是地址 ，而且不一定是按照字符串顺序打印的，因为set是根据地址大小进行排序的
+}
+
+//因此需要写一个比较类去进行比较
+struct DereferenceLess{
+    template<typename,PtrType>
+    bool operator()(PtrType lhs,PtrType rhs){
+        return *lhs<*rhs;
+    }
+}
+set<string*,DereferenceLess>ssp;//这样就按照字符串顺序进行打印
+```
+
