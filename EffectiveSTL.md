@@ -371,3 +371,99 @@ struct DereferenceLess{
 set<string*,DereferenceLess>ssp;//这样就按照字符串顺序进行打印
 ```
 
+## 18.总让比较函数在相等的情况下返回false
+
+```c++
+//例如给set<int,less_equal<int>> s;
+s.insert(10);
+s.insert(10);
+//这会导致容器中出现两个10，违背了set的定义，因为在比较两个10是否等价时采用
+!(10<=10)&&!(10<=10) //false 不等价 所以导致存了两个10
+
+```
+
+## 19.切勿直接修改set 或者 multiset的键
+
+所谓的键就是进行比较等价的内容，因为set是按顺序存储的所以不能直接修改。而map是修改不了，因为map存储类型是pair<const k,v>。
+
+```c++
+//但是有的sTL不支持修改set 它返回迭代器类型为 const T&,想要修改就要类型转化,但是存在风险
+//const_cast 指向原来的引用
+const_cast<employee>(*it).setTitle("dasd");
+//使用static_cast则不行，它会生成一个临时隐匿对象，修改的是这个对象
+static_cast<employee>(*it).setTitle("dasd");
+//相当于
+(employee(*it)).setTitle("dasd");
+```
+
+安全的方法就是拷贝一份元素将其修改，然后删除原有的，再将其添加。
+
+## 20.考虑用排序vector代替关联容器
+
+当你的数据类型满足三个阶段时，可以考虑用排序vector代替关联容器
+
+- 插入删除阶段，几乎不查询
+- 查找阶段，几乎不查找
+- 重组阶段，将元素全部删除再添加。
+
+因为关联容器底层为平衡二叉树，一个节点保活root,left,right三个地址，相比vector太空间。
+
+## 21.当效率至关重要，谨慎选择opertor[] 和insert
+
+```c++
+map<int,widget>m
+//在插入时使用operator[]，相当于先要构造临时对象然后析构然后赋值
+m[1]=1.50;
+//相当于
+typedef map<int,widget>IntWidgetMap;
+pair<IntWidgetMap::iterator,bool>result=m.insert(IntWidgetMap::value_type(1,widget()));
+result.first->second=1.5;
+//不如使用insert
+m.insert(IntWidgetMap::value_type(1,50);
+
+//当更新数据时
+m[1]=51;
+//用insert需要构造，然后析构然后赋值
+m.insert(IntWidgetMap::value_type(k,v).first->second=v;
+```
+
+当插入时用insert效率高，当更新时用operator[]效率高。
+
+## 22.使用distance 和advance将容器的const_iterator转换为iterator
+
+当有的容器类的成员函数仅接受iterator作为参数,const_iterator不能作为他们都参数。必须进行强制类型转换。
+
+```c++
+typedef deque<int> IntDeque;
+typedef IntDeque:: iterator Iter;
+typedef IntDeque:: const_iterator ConstIter;
+ConstIter ci;
+Iter i(ci);
+Iter i(const_cast<Iter>(ci));//const_iterator不能强制转为iterator
+//iterator 与const_iterator是两个不同的类，它们之间的差距可能比string 与 double都远
+//但是对于vector 与string是可以通过的，因为它们的迭代器底层是char*
+
+//使用advance 与distance实现安全转换
+Iter i(d.begin());
+advance(i,distance<ConstIter>(i,ci));//要加ConstIter 进行强制类型转换
+```
+
+## 23.正确理解由reverse_iterator的base()成员函数所产生的iterator的用法
+
+```c++
+vector<int>v;
+v.reserve(5);
+for(int i=1;i<=5;++i){
+    v.push_back(i);
+}
+vector<int>::reverse_iterator ri=find(v.rbegin(),v.rend(),3);
+vector<int>::iterator i(ri.base());
+```
+
+执行完上述代码之后，该vector和相应迭代器的状态如下图所示：
+
+![image-20220915221408689](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220915221408689.png)
+
+如果在reverse_iterator ri指向的位置插入新元素，只需要在ri.base()位置处插入元素就行了。
+
+但是reverse_iterator处删除元素的话，则需要执行v.((++ri).base())；
