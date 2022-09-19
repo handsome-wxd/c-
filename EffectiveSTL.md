@@ -171,7 +171,7 @@ bool badValue(int);
 对于连续容器例如 vector,deque,string
 
 ```
-c.earse(remove(c.begin(),c.end(),badValue),c.end());
+c.earse(remove_if(c.begin(),c.end(),badValue),c.end());
 ```
 
 对于list
@@ -257,7 +257,7 @@ vector和string可以实现自己释放内存，并且可以使用STL算法
 
 但是在多线程情况下使用string，可能会造成性能下跌，不如使用vector<char>，因为string采用的是引用计数。
 
-12.使用reserve避免不必要的重新分配
+## 12.使用reserve避免不必要的重新分配
 
 ![image-20220911205652519](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220911205652519.png)
 
@@ -266,7 +266,7 @@ vector和string可以实现自己释放内存，并且可以使用STL算法
 - 当知道需要预留的空间大小使，用reserve函数提前去开辟。
 - 当不知道时，开辟足够大的，到最后在去除多余容量。
 
-## 12.注意string实现的多样性
+## 13.注意string实现的多样性
 
 STL对string的实现有不同的方式，每个方式都有不同的特点，详情看第十五条
 
@@ -284,7 +284,7 @@ string可能支持，也可能不支持对单个对象的分配子
 
 不同实现对内存的最小分配有不同策略。
 
-## 13.了解如何将string和vector 传给旧的API
+## 14.了解如何将string和vector 传给旧的API
 
 对于vector
 
@@ -300,7 +300,7 @@ dosomething(&v[0], numInts);
 
 对于string
 
-```
+```c++
 //对于旧的API
 void dosomething(const char *pstring)
 //strng 应该传递
@@ -309,7 +309,7 @@ dosomething(str.c_str())
 //因为string不是连续存储的，而且string不一定是以空字符结尾的。所以string内部有个c_str，指向字符串值的指针
 ```
 
-## 14.使用‘swap技巧’去除多余的内存
+## 15.使用‘swap技巧’去除多余的内存
 
 ```c++
 vector<int>n(100,0);
@@ -326,17 +326,17 @@ string str="dada";
 string ().swap(str);
 ```
 
-## 15.避免是用vector<bool>
+## 16.避免使用vector<bool>
 
 因为vector<bool>不满足c++标准：c如果是包含对象T的容器，则 T* p=&c[0]是可以通过编译的。但是对于vector<bool>是不行的。因为，vector<bool>在内部是一位一位存的，而不是按自己存储，因为没办法创建指向单个位的指针
 
 可以用deque<bool>替代和bitset替代（大小固定，不能插入元素）。
 
-## 16，理解相等和等价的区别
+## 17，理解相等和等价的区别
 
 等价不一定是相等的，相等肯定是等价的。
 
-对于类的等价，取决于operator = 函数中的函数体。在关联容器中，例如map,set这种顺序存储的容器，需要定义一个比较类去确定它们的顺序。
+对于类的等价，取决于operator = =函数中的函数体。在关联容器中，例如map,set这种顺序存储的容器，需要定义一个比较类去确定它们的顺序。
 
 ```c++
 struct CIstringCompare{
@@ -349,7 +349,7 @@ return ciStringCompare(lhs,rhs);//忽略string 大小写的比较
 set<string,CIstringCompare)ciss;
 ```
 
-## 17.为包含指针的关联函数指定比较类型
+## 18.为包含指针的关联函数指定比较类型
 
 ```c++
 set<string *>ssp;
@@ -371,7 +371,7 @@ struct DereferenceLess{
 set<string*,DereferenceLess>ssp;//这样就按照字符串顺序进行打印
 ```
 
-## 18.总让比较函数在相等的情况下返回false
+## 19.总让比较函数在相等的情况下返回false
 
 ```c++
 //例如给set<int,less_equal<int>> s;
@@ -382,7 +382,7 @@ s.insert(10);
 
 ```
 
-## 19.切勿直接修改set 或者 multiset的键
+## 20.切勿直接修改set 或者 multiset的键
 
 所谓的键就是进行比较等价的内容，因为set是按顺序存储的所以不能直接修改。而map是修改不了，因为map存储类型是pair<const k,v>。
 
@@ -398,7 +398,7 @@ static_cast<employee>(*it).setTitle("dasd");
 
 安全的方法就是拷贝一份元素将其修改，然后删除原有的，再将其添加。
 
-## 20.考虑用排序vector代替关联容器
+## 21.考虑用排序vector代替关联容器
 
 当你的数据类型满足三个阶段时，可以考虑用排序vector代替关联容器
 
@@ -408,7 +408,7 @@ static_cast<employee>(*it).setTitle("dasd");
 
 因为关联容器底层为平衡二叉树，一个节点保活root,left,right三个地址，相比vector太空间。
 
-## 21.当效率至关重要，谨慎选择opertor[] 和insert
+## 22.当效率至关重要，谨慎选择opertor[] 和insert
 
 ```c++
 map<int,widget>m
@@ -429,7 +429,7 @@ m.insert(IntWidgetMap::value_type(k,v).first->second=v;
 
 当插入时用insert效率高，当更新时用operator[]效率高。
 
-## 22.使用distance 和advance将容器的const_iterator转换为iterator
+## 23.使用distance 和advance将容器的const_iterator转换为iterator
 
 当有的容器类的成员函数仅接受iterator作为参数,const_iterator不能作为他们都参数。必须进行强制类型转换。
 
@@ -443,12 +443,12 @@ Iter i(const_cast<Iter>(ci));//const_iterator不能强制转为iterator
 //iterator 与const_iterator是两个不同的类，它们之间的差距可能比string 与 double都远
 //但是对于vector 与string是可以通过的，因为它们的迭代器底层是char*
 
-//使用advance 与distance实现安全转换
+//使用advance 与distance实现安全转换 将ci 从const_iterator 转为iterator
 Iter i(d.begin());
 advance(i,distance<ConstIter>(i,ci));//要加ConstIter 进行强制类型转换
 ```
 
-## 23.正确理解由reverse_iterator的base()成员函数所产生的iterator的用法
+## 24.正确理解由reverse_iterator的base()成员函数所产生的iterator的用法
 
 ```c++
 vector<int>v;
@@ -467,3 +467,370 @@ vector<int>::iterator i(ri.base());
 如果在reverse_iterator ri指向的位置插入新元素，只需要在ri.base()位置处插入元素就行了。
 
 但是reverse_iterator处删除元素的话，则需要执行v.((++ri).base())；
+
+## 25.对于逐字符的输入请考虑使用istreambuf_iterator
+
+```c++
+//将一个文本文件拷贝到string中
+ifstream inputFile("interestingData.txt");
+//这段代码没有将空白字符加载进去，因为istream_iterator使用operator>>函数完成实际的读操作，默认operator>>函数会跳过空白字符
+//如果没有消除skipws标志，将默认忽略空白字符
+inputFile.unsetf(ios::skipws);//消除sKipws标志位
+string fileData((istream_iterator<char>(inputFile)),istream_iterator<char>());
+
+//但是拷贝速度不快，因为每一个operator>>操作 需要执行许多额外的操作
+//推荐使用istreambuf_iterator，速度快40%，它是直接从缓冲区中读取下一个字符
+ifstream inputFile("intersetingData.txt");
+string fileData((istreambuf_iterator<char>(inputFile)),istreambuf_iterator<char>());
+```
+
+```c++
+#include<iostream>
+#include<random>
+#include<ctime>
+#include<fstream>
+#include<iterator>
+using namespace std;
+
+int main(){
+    ofstream outfile;
+    outfile.open("file.txt",ios::app);
+    srand(time(nullptr));
+    for(int i=0;i<1000000;++i){
+        outfile<<rand()%26+'a';
+    }
+    clock_t start,stop;
+
+    ifstream inputFile("file.txt");
+    inputFile.unsetf(ios::skipws);
+    start=clock();
+    string fileData1((istream_iterator<char>(inputFile)),istream_iterator<char>());
+    stop=clock();
+    cout<<"istream花费了"<<(stop-start)<<endl;
+     start=clock();
+    string fileData2((istreambuf_iterator<char>(inputFile)),istreambuf_iterator<char>());
+    stop=clock();
+    cout<<"istreambuf花费了"<<(stop-start)<<endl;
+
+    return 0;
+}
+```
+
+![image-20220916223026949](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220916223026949.png)
+
+## 26.确保目标区间足够大
+
+```c++
+//给一个容器后面插入元素
+int transmogrify(int x);//该函数根据x生成一个新值
+vector<int> values;
+...//给values 里面插入新值
+vector<int>results;
+//给results.end()插入元素是错误的，因为*resultes.end()里面没有元素
+transform(values.begin(),values.end(),results.end(),transmogrify);
+//应该用back_inserter生成迭代器进行插入，返回的迭代器将被push_back调用
+transform(values.begin(),values.end(),back_inserter(results),transmogrify);
+//插在前面,被front_back调用 ，没有front_back的容器不能使用，比如vector
+transform(values.begin(),values.end(),front_inserter(results),transmogrify);
+//如果担心，需要重新分配空间，就需要使用 reserver
+vector<int>results;
+results.reverse(results.size()+values.size());
+transform(values.begin(),values.end(),front_inserter(results),transmogrify);
+```
+
+## 27.了解各种和排序有关的选择
+
+- 如果需要对vector,string,deque或者数组中的元素执行一次完全排序，那么可以使用sort或者stable_sort进行
+- 如果有一个vector,string,deque或者数组，并且只需要对等价性最前面的n个元素进行排序，那么可以使用partial_sort
+
+```c++
+//将质量最好的前n个放在widgets的最前面
+partial_sort(widgets.begin(),widgets.begin()+n,widgets.end(),quealityCompare);
+```
+
+- 如果有一个vector,string,deque或者数组，并且只需要只需要找个第n个位置的元素，或者需要找到等价性最前面的n个元素但有不对这n个元素进行排序，那么可以使用nth_element
+
+```c++
+//找出质量最好的前n个元素，不用对n个元素进行排序
+nth_element(widgets.begin(),widgets.begin()+n-1,widgets.end(),quealityCompare);
+//找到质量中间的元素
+vector<widget>::iterator it=nth_element(widgets.begin(),widgets.begin()+widgets.size()/2,widgets.end(),quealityCompare);
+```
+
+- 如果需要将一个标准序列容器的元素按照是否满足某个特定的条件区分开，那么partition和stable_partition很合适
+
+```c++
+//找到第一个质量比二级还差元素的位置
+vector<widget>::iterator goodEnd=partition(widgets.begin(),widgets.end(),hasAcceptableQulity);
+//返回第一个不满足大于二级质量条件的widget
+```
+
+- 如果你的数据在一个list中，仍然可以使用partition和stable_partition
+
+- 排序算法的效率排序
+
+partition,stable_partition,nth_element,partial_sort,sort,stable_sort.
+
+## 28.如果确实需要删除元素，则需要在remove这一类算法之后调用erase
+
+```c++
+//remove的参数是迭代器，并不知道容器的类型，无法调用容器的成员函数 earse,所以用remove 容器中元素的数目并不会减少
+template<<class ForwardIterator,class T>
+ForwardIterator remove(ForwardIterator first,ForwardIterator last,const T&value);
+//remove只是把不用删除的元素移到区间的前部，它返回迭代器指向最后一个“不用删除”的元素之后的元素。
+remove(v.begin(),v.end(),99);
+```
+
+事实上并没有将99的放在后面，后面还保留着旧值，用保留的值覆盖掉要删除的值
+
+![image-20220917190200302](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220917190200302.png)
+
+![image-20220917190127261](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220917190127261.png)
+
+```c++
+//为了真的删除空间中值，使用erase
+v.erase(remove(v.begin(),v.end(),99),v.end());
+//list的remove是和erase融合的
+list<int>li;
+li.remove(99);
+```
+
+remove对于包含指针的容器，再用在和erase进行连用时，记得先要释放内存，防止内存泄漏。对于智能指针不用这样做。
+
+## 29.使用accumulate进行区间统计
+
+```c++
+//统计list中所有值的和
+list<double> ld;
+...//添加元素
+double sum=accumulate(ld.begin(),id.end(),0.0);
+//统计容器中所有字符串长度之和
+string::size_type
+StringLengthSum(string::size_type sumSoFar,const string& s){
+ return sumFoFar+s.size();
+}
+set<string>ss;
+string::size_type lengthSum=accumlate(ss.begin(),ss.end(),static_cast<string::size_type(0),stringLengthSum);
+
+//统计区间内所有点的平均值
+struct Point{
+    Point(double initX,double initY):x(initX),y(initY){}
+    double x,y;
+}
+class PointAverage:public binary_function<Point,Point,Point>{
+    public:
+    PointAverage():xSum(0),ySum(0),numPoints(0){}
+    const Point operator()(const Point& avgSoFar,const Point &p){
+        ++numPoints;
+        xSum+=p.x;
+        ySUm+=p.y;
+        return Point(xSum/numPoints,ySum/numPoints);
+    }
+    private:
+    size_t numPoints;
+    double xSum;
+    double ySum;
+}
+Point avg=acculate(lp.begin(),lp.end(),Point(0,0),PointAverage());
+```
+
+## 30.遵循按值传递的原则来设计函数子类
+
+对于多态的函数对象，不能使用虚函数，因为参数类型是基类，而实参类型是派生类的，在传递的过程中会产生剥离问题：在对象拷贝的过程中，派生部分可能会被去掉，而仅保留基类部分。
+
+函数对象在STL中作为参数或者返回时总是值传递，意味着第一：函数对象小巧，第二，函数对象是单态。
+
+## 31.确保判别式是纯函数
+
+- 判别式：是一个返回值为bool的函数。在STL中，判别式有着广泛的用途。标准关联容器的比较函数就是判别式，对于find_if以及各种排序算法，判别式往往也被作为参数来传递。
+- 纯函数：是指返回值仅仅依赖其参数的函数。
+- 判别类：是一个函数的子类，它的operator()函数是一个判别式。
+
+判别式是纯函数的理由：STL传递是按值传递，所以如果依赖判别式依赖外界参数可能会导致出错。
+
+## 32.若一个类是函数子，应该让它可配接
+
+```c++
+list<widget*>widgetPtrs;//一个包含Widget对象指针的list容器
+bool isInteresting(const Widget* pw);//判断某个Widget指针所指对象是否足够有趣
+//找第一个有趣的widget
+list<Widget *>::iterator  i=find_if(widgetPtrs.begin().widgetPtrs.end(),isInteresting);
+//如果想第一个不有趣的widget
+list<Widget *>::iterator  i=find_if(widgetPtrs.begin().widgetPtrs.end(),not1(isInteresting);//错误
+list<Widget *>::iterator  i=find_if(widgetPtrs.begin().widgetPtrs.end(),not1(ptr_fun(isInteresting));//正确
+ //not1是函数配接器，ptr_fun的作用是完成类型定义
+//只有提供必要类型定义的函数对象被称为可被配接的函数对象
+//提供这些类型定义最简单的方式就是让函数子从特定的基类继承。
+//函数子operator只有一个参数就从std::unary_function继承
+//函数子两个参数就从std::binary_function继承
+//unary_function和binary_function是模板，不能直接继承，需要提供类型实参
+```
+
+```c++
+//operator一个参数继承std::unary_function
+template<typename T>
+//提供operator第一个参数的类型和返回值类型
+class MeetsThreshold:public std::unary_function<widget,bool>{
+private:
+	const T threshold;
+public:
+	bool operator()(const Widget&) const;
+}
+
+//operator两个参数的继承
+//当函数子不需要任何私有成员
+//提供operator第一个参数的类型,第二个参数的类型和返回值类型
+//operator是带引用和const而模板没有，传递给unary_function,binary_function非指针类型需要去掉const 和 &
+struct WidgetNameComapre:public std::binary_function<Widget,Widget,bool>{
+    bool operator()(const Widgets& lhs,const widget&rhs)const;
+}
+//对于指针类型 则是可以
+struct WidgetNameComapre:public std::binary_function<const Widget *,const Widget*,bool>{
+    bool operator()(const Widgets* lhs,const widget* rhs)const;
+}
+
+//类型定义后的子类可以直接只有函数配接器
+list<widget>::reverse_iterator i=find_if(widgets.begin(),widgets.end(),not1(MeetsThreshold<int>()))s
+```
+
+## 33.理解ptr_fun,mem_fun和mem_fun_ref的由来
+
+```c++
+f(x);//f是一个非成员函数
+x.f();//f是成员函数，并且x是一个对象或者对象的引用
+p->f();//f是成员函数，并且p是一个指向对象x的指针
+void test(widget &w);
+vector<widget>vw;
+for_each(vw.begin(),vw.end(),test);//可以通过编译
+class widget{
+    public:
+    ...
+    void test();
+    ...
+}
+for_each(vw.begin(),vm.end(),&widget::test);//不能通过编译
+list<widget *>lpw;
+for_each(lpw.begin(),plw.end(),&widget::test);//不能通过编译
+//原因 for_each算法是基于非成员函数实现的
+//for_each算法的实现
+template<typename InputIterator ,typename Function>
+Function for_each(InputIterator begin,InputIterator end,Function f){
+    while(begin!=end)
+        f(*begin++);
+}
+//mem_fun,mem_fun_ref用来调整使能够被成员函数使用
+//mem_fun的定义
+template<typename R,typename C>
+mem_fun<R,C>;//C是类，R是指向成员函数的返回类型
+mem_fun(R(C::*pmf)());
+//mem_fun带一个指向某个成员函数的指针参数pmf，并且返回一个mem_fun_t类型的对象。mem_fun_t是一个函数子类，它拥有该成员函数的指针，并提供operator函数，在operator函数中调用通过参数传递进来的对象上的成员函数
+for_each(lpw.begin(),lpw.end(),mem_fun(&widget::test));//可以通过编译
+```
+
+## 34.算法调用优于手写的循环
+
+- 效率：算法通常比程序员自己写的循环效率高
+- 正确性：自己写的循环比使用算法更容易出错
+- 可维护性：使用算法的代码通常比手写循环的代码更加简洁明了。
+
+如果要做的工作有算法实现就用算法。但是如果使用循环很简单，而使用算法实现的话却要求使用绑定器和配接器或者要求一个单独的函数子类，就使用循环。
+
+## 35.容器的成员函数优于同名算法
+
+- 成员函数往往速度很快
+- 成员函数通常和容器结合的更加紧密
+
+```
+set<int>s;
+...  //插入一百万个值
+set<int>::iterator i=s.find(727);//以对数时间运行
+if(i!+s.end())...
+set<int>::iterator i=find(s.begin(),s.end(),727);//使用find算法 以线性时间运行
+
+```
+
+## 35.正确区分count,find,binary_search,lower_bound,upper_bound和equal_range
+
+
+
+- 对于区间没有排序的，应当使用count和find，它们是线性时间，使用**相等性**查找
+
+  ```
+  vector<int>s;
+  ```
+
+  count是找区间中存在某个特定值的个数
+
+  ```
+  int num=count(s.begin,s.end(),5);//查找5在区间存在的个数
+  ```
+
+  find 是找区间中第一个特定值的位置
+
+  ```
+  int index=count(s.begin,s.end(),5);//查找第一个5的位置
+  ```
+
+- 对于区间排序的，可以使用binary_search,equal_range,lower_bound，对数时间,使用**等价性**查找
+
+  ```
+  vector<widget>vm;
+  ...
+  wdiget w;
+  ```
+
+  binary_search，只回答是否存在的问题
+
+  ```
+  bool exist=binary_search(vm.begin(),vm.end(),w);//查看5是否存在
+  ```
+
+  lower_bound，返回一个迭代器，如果存在返回第一份的拷贝，如果不存在返回适合于插入该值的位置
+
+  ```
+  vector<widget>::iterator it=lower_bound(vm.begin(),vm.end(),w);
+  ```
+
+  equal_range,返回一对迭代器，第一个迭代器等于lower_bound返回的迭代器，第二个迭代器等于upper_bound（指向区间内最后一个等价元素的下一个位置）返回的迭代器
+
+  ```c++
+  typedef vector<widget>::iterator VMIter;
+  typedef pare<VMIter,VMIter> VMIterPair;
+  VMIterPair p=equal_range(vm.begin(),vm.end(),w);
+  //两个迭代器之间的距离，即使原始区间查找等价对象的数目
+  if(p.first!=p.second){
+  //说明存在
+  }
+  {
+  //说明不存在，两个迭代器都指向w的插入位置
+  }
+  ```
+
+  ![image-20220918171324230](C:\Users\18440\AppData\Roaming\Typora\typora-user-images\image-20220918171324230.png)
+
+## 36.避免直写型的代码
+
+假如有一个vector<int>，现在想删除其中所有其值小于x的元素，但是，在最后一个其值不小于y的元素之前的所有元素应该保留下来。
+
+```c++
+vector<int> v;
+int x,y;
+...
+v.erase(remove_if(v.rbegin(),v.rend(),bind2nd(greater_equal<int>(),y)).base(),v.end(),bind2nd<less<int>>(),x)),v.end());
+//可读性太差,不利于后来者维护
+//进行分解
+typedef vector<int>::iterator VecIntIter;
+//初始化rangeBegin,使它指向v中大于等于y的最后一个元素之后的元素
+//如果不存在这样的元素，则rangeBegin被初始化为v.bgein()
+//如果这样的元素正好是V最后一个元素，则rangeBegin被初始化为v.end()
+VecIntIter rangeBegin=find_if(v.rbegin(),v.rend(),bind2nd(greater_equal<int>(),y)).base();
+//从rangeBegin到v.end()的区间中删除所有小于x的值
+v.erase(remove_if(rangeBegin,v.end(),bin2nd(less<int>(),x)),v.end());
+//bind2nd 将二元函数转为一元函数，因为函数内一个参数已经被确定
+```
+
+## 37.总是包含（#include）正确的头文件
+
+因为不同的平台头文件之间包含关系不通，因此任何时间如果你使用某个头文件中的一个STL组件，一定要提供对应的#include 指令
+
+**在一个声明为const的成员函数内部，该类所有的非静态数据成员都自动被转换为相应的const类型。**
